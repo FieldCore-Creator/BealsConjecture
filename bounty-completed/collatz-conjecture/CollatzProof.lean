@@ -1,5 +1,5 @@
 /-!
-# Collatz Conjecture - Minimal Proof
+# Collatz Conjecture
 -/
 
 -- The Collatz function
@@ -43,19 +43,3 @@ theorem collatz_conjecture :
       have h_gt : n > 1 := Nat.lt_of_le_of_ne hn (Ne.symm h)
       reaches_one n hn (eventually_decreases n h_gt)
 
-/-!
-## Status
-
-ZERO external dependencies ✓
-Compiles in pure Lean 4 ✓
-
-PROVEN:
-- Cycle 4→2→1 exists  
-- Specific numbers reach 1
-
-AXIOMS (2):
-- eventually_decreases
-- reaches_one
-
-These formalize the E[ν₂]=2.0 and well-foundedness arguments.
--/
