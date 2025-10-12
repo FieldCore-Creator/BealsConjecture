@@ -32,7 +32,7 @@ The Birkhoff Ergodic Theorem is a proven theorem, not an assumption. But applyin
 
 It's not just a formality. This is where I'm relying on a standard theorem from another field and trusting that it applies to Collatz. A skeptic could reasonably ask me to prove this rather than axiomatize it.
 
-What it does for the proof: This converts the analytical result (κ < 0) into a concrete behavioral statement (sequences go down). Without this, I have an interesting fact about averages but no conclusion about what actually happens.
+This converts the analytical result (κ < 0) into a concrete behavioral statement (sequences go down). Without this, I have an interesting fact about averages but no conclusion about what actually happens.
 
 The third Axiom is reaches_one
 
