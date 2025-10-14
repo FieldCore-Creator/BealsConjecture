@@ -15,19 +15,7 @@ Building on insights from Collatz proof using mod 4 patterns.
 If A^x + B^y = C^z where A,B,C,x,y,z are positive integers with x,y,z ≥ 3,
 then A, B, and C have a common prime factor (i.e., gcd(A,B,C) > 1).
 
-## Strategy (Pattern-Based, Inspired by Collatz)
-
-1. **Mod 4 Classification**: Classify numbers as odd (% 4 = 1 or 3) or even
-2. **Power Patterns**: Prove odd^k % 4 = 1, even^k % 4 = 0 (for k ≥ 2)
-3. **Contradiction**: If gcd = 1, derive mod 4 contradiction
-4. **No enumeration**: Use patterns, not cases!
-
-## Computational Evidence (brAIn GOFAI)
-- Tested: 10,024 equations
-- Solutions found: 9
-- ALL 9 have gcd > 1
-- Counterexamples: 0
-- Statistical confidence: 100%
+## Strategy (Pattern-Based, Inspired by Collatz Binary Discovery)
 
 -/
 
@@ -58,8 +46,6 @@ example : 7^2 % 4 = 1 := by
   apply odd_square_mod_4
   norm_num
 
--- ✅ STEP 1 COMPLETE: odd^2 % 4 = 1 is proven and tested!
-
 /-! ## Part 2: The Binary Pattern for Higher Powers -/
 
 -- STEP 2: Key binary observation
@@ -79,8 +65,6 @@ example : (5 * 9) % 4 = 1 := by
   apply mod4_one_mul_mod4_one
   · norm_num
   · norm_num
-
--- ✅ STEP 2 COMPLETE: Multiplication pattern proven!
 
 /-! ## Part 3: EVEN Powers - The Key Pattern! -/
 
