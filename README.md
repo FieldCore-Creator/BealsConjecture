@@ -1,1 +1,1 @@
-See Binary Folder
+Hello! My Name is Cory, I started this Repo to Benchmark a GOFAI I was working on and ended up working on math. I recommend you start with the CollatzBinaryProof and move from there through the others.
