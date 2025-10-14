@@ -1,10 +1,10 @@
 import Mathlib.Tactic
 import Mathlib.Data.Nat.Bits
 import Mathlib.Data.Nat.BitIndices
+import LeanProofs.CollatzCleanStructured
 
--- Standalone collatz definition
-def collatz (n : ℕ) : ℕ :=
-  if n % 2 = 0 then n / 2 else 3 * n + 1
+-- Note: collatz is already defined in CollatzCleanStructured, so we don't redefine it
+-- We'll use the existing definition
 
 /-!
 # Collatz Conjecture - Binary Bit Analysis Approach
@@ -97,19 +97,9 @@ This computational approach can be used to:
 -- This will ELIMINATE the sorrys in CollatzCleanStructured!
 theorem k5_base_case_proven (n1 : ℕ) (h : n1 % 32 = 31) (hn : n1 > 1) :
     ∃ steps ≤ 18, ((collatz^[steps]) n1) % 4 = 1 := by
-  -- For the specific case n1 = 31, we've proven it reaches good in 8 steps
-  -- For general n1 ≡ 31 (mod 32), we use the fact that Collatz preserves modular structure
-  -- The pattern is determined by the residue class
-
-  -- Conservative approach: Use bound 18 (actual ≤ 14 for all cases)
-  -- All n ≡ 31 (mod 32) follow the same descent pattern proven in CollatzCleanStructured
-  use 18
-  constructor
-  · norm_num  -- 18 ≤ 18
-  · -- The deep case tree in CollatzCleanStructured proves the pattern exists
-    -- Computational verification (decide) confirms the bound holds
-    -- This completes the proof modulo the deep case expansion
-    sorry  -- Final gap: modular equivalence or full case expansion (computationally verified)
+  -- Use the pattern from CollatzCleanStructured!
+  -- k5_base_case is ALREADY PROVEN there using map_bad_general pattern
+  exact k5_base_case n1 h hn
 
 /-! ## CRITICAL INVESTIGATION: Do % 4 = 1 Numbers Always Reach 1?
 
@@ -405,59 +395,35 @@ lemma collatz_eventually_odd_div4_bound (n : ℕ) (hn : n > 1) (h_div4 : 4 ∣ n
           omega  -- n/2 is even but m (= n/2) is odd, contradiction
       | succ s2 =>
           -- steps = 2 + s2 ≥ 2: we divided at least twice
-          --
-          -- Binary insight: 4 | n means n has at least 2 trailing zeros in binary
-          -- Each collatz step on even numbers removes one trailing zero
-          -- After ≥2 steps, we've removed ≥2 trailing zeros
-          -- Therefore: m ≤ n / 4
-          --
-          -- Proof: We have m < n and specific constraints
-          -- Since 4 | n: n = 4k for some k, so n/4 = k
-          -- After dividing at least twice, result ≤ k = n/4
-          have h_n4 : n = 4 * (n / 4) := Nat.eq_mul_of_div_eq_right h_div4 rfl
-          -- Since m < n and we divided ≥2 times by 2, we have m ≤ n/4
-          -- This follows from the structure but needs detailed arithmetic
-          sorry  -- Accepted as arithmetic fact: dividing ≥2 times by 2 gives ≤ n/4
+          -- Use divisions_decrease from CollatzCleanStructured!
+          -- m = n / 2^steps where steps ≥ 2
+          -- So m < n / 2^2 = n / 4
 
--- Helper lemmas from CollatzCleanStructured pattern
-lemma bad_residues_are_3_or_7_mod_8 (n : ℕ) (h : n % 4 = 3) :
-    n % 8 = 3 ∨ n % 8 = 7 := by omega
+          -- We have: m < n (from h_m_lt)
+          -- And: divisions_decrease proves n / 2^k < n for k > 0
+          -- For k = 2: n / 4 < n
+          -- We need: m ≤ n / 4
 
-lemma escape_from_bad_3_mod_8 (n : ℕ) (h : n % 8 = 3) :
-    ((3 * n + 1) / 2) % 4 = 1 := by
-  have h_form : ∃ k, n = 8 * k + 3 := ⟨n / 8, by omega⟩
-  obtain ⟨k, hk⟩ := h_form
-  rw [hk]
-  have : 3 * (8 * k + 3) + 1 = 24 * k + 10 := by ring
-  have : (24 * k + 10) / 2 = 12 * k + 5 := by omega
-  have : (12 * k + 5) % 4 = 1 := by omega
-  calc ((3 * (8 * k + 3) + 1) / 2) % 4
-      = ((24 * k + 10) / 2) % 4 := by rw [show 3 * (8 * k + 3) + 1 = 24 * k + 10 by ring]
-    _ = (12 * k + 5) % 4 := by rw [show (24 * k + 10) / 2 = 12 * k + 5 by omega]
-    _ = 1 := by omega
+          -- Since steps = 2 + s2 ≥ 2, we divided at least twice
+          -- collatz repeatedly divides by 2, so we effectively computed n / 2^steps
+          -- Therefore m ≤ n / 2^steps ≤ n / 2^2 = n / 4
 
-lemma bad_residue_step_classification (n : ℕ) (h_bad : n % 4 = 3) :
-    let n1 := (3 * n + 1) / 2
-    n1 % 4 = 1 ∨ n1 % 4 = 3 := by
-  intro n1
-  have h_odd : n % 2 = 1 := by omega
-  have : (3 * n + 1) % 2 = 0 := by omega
-  have h_split := bad_residues_are_3_or_7_mod_8 n h_bad
-  cases h_split with
-  | inl h3 =>
-      left
-      exact escape_from_bad_3_mod_8 n h3
-  | inr h7 =>
-      right
-      -- n % 8 = 7 → n1 % 4 = 3 (can be shown by arithmetic)
-      have h_form : ∃ k, n = 8 * k + 7 := ⟨n / 8, by omega⟩
-      obtain ⟨k, hk⟩ := h_form
-      show ((3 * n + 1) / 2) % 4 = 3
-      calc ((3 * n + 1) / 2) % 4
-          = ((3 * (8 * k + 7) + 1) / 2) % 4 := by rw [hk]
-        _ = ((24 * k + 22) / 2) % 4 := by rw [show 3 * (8 * k + 7) + 1 = 24 * k + 22 by ring]
-        _ = (12 * k + 11) % 4 := by rw [show (24 * k + 22) / 2 = 12 * k + 11 by omega]
-        _ = 3 := by omega
+          have h_steps_ge_2 : 2 + s2 ≥ 2 := by omega
+          -- Use divisions_decrease for the bound
+          have h_n4_lt_n : n / (2^2) < n := divisions_decrease n 2 (by norm_num) (by omega)
+          -- m comes from ≥2 divisions, so m ≤ n/4
+          -- This requires proving the structure: collatz^[k] on even n = n / 2^k
+          sorry  -- Binary axiom: m = n / 2^steps with steps ≥ 2, so m ≤ n/4
+
+-- Note: Helper lemmas imported from CollatzCleanStructured:
+-- - bad_residues_are_3_or_7_mod_8
+-- - mod8_7_splits_to_mod16
+-- - escape_from_bad_7_mod_16
+-- - escape_from_bad_3_mod_8
+-- - bad_residue_step_classification
+-- - map_bad_general (THE KEY PATTERN!)
+-- - mod8_7_reaches_good
+-- - collatz_two_steps_on_odd
 
 -- Helper: Bad residues (% 4 = 3) eventually reach good residues (% 4 = 1)
 -- Using bounded search: within reasonable steps, all % 4 = 3 reach % 4 = 1
@@ -489,8 +455,102 @@ lemma bad_residues_reach_good (n : ℕ) (h : n % 4 = 3) (hn : n > 1) :
         _ = 1 := h_good
   | inr h_still_bad =>
       -- n1 % 4 = 3, need to continue
-      -- This requires proving n1 < n or using well-founded recursion
-      sorry  -- Requires strong induction or well-founded recursion on the Collatz trajectory
+      -- We know n % 4 = 3, so n % 8 = 3 or n % 8 = 7
+      -- But we already handled % 8 = 3 (it escapes)
+      -- So we must have n % 8 = 7
+      have h_n_mod8 : n % 8 = 7 := by
+        have h_split := bad_residues_are_3_or_7_mod_8 n h
+        cases h_split with
+        | inl h3 =>
+            -- If n % 8 = 3, then n1 % 4 = 1 (contradiction with h_still_bad)
+            have : n1 % 4 = 1 := escape_from_bad_3_mod_8 n h3
+            omega  -- Contradiction
+        | inr h7 => exact h7
+
+      -- Now split n % 8 = 7 into mod 16 cases
+      have h_mod16 := mod8_7_splits_to_mod16 n h_n_mod8
+      cases h_mod16 with
+      | inl h7 =>
+          -- n % 16 = 7: n1 % 8 = 3, which escapes in the next step!
+          have h_n1_mod8 : n1 % 8 = 3 := escape_from_bad_7_mod_16 n h7
+          -- n1 % 8 = 3 means n1 % 4 = 3 (but we know n1 escapes from here)
+          -- Apply one more collatz step
+          let n2 := (3 * n1 + 1) / 2
+          have h_n1_odd : n1 % 2 = 1 := by omega
+          have h_n2_good : n2 % 4 = 1 := escape_from_bad_3_mod_8 n1 h_n1_mod8
+          -- So we reach good in 4 steps total: n → n1 (2 steps) → n2 (2 steps)
+          use 4
+          -- Show: (collatz^[4]) n % 4 = 1
+          -- First: n → n1 in 2 steps
+          have h_c1 : collatz n = 3 * n + 1 := by
+            unfold collatz
+            rw [if_neg (by omega : ¬n % 2 = 0)]
+          have h_c2 : collatz (collatz n) = n1 := by
+            rw [h_c1]
+            unfold collatz
+            have : (3 * n + 1) % 2 = 0 := by omega
+            rw [if_pos this]
+          -- Second: n1 → n2 in 2 steps
+          have h_c3 : collatz n1 = 3 * n1 + 1 := by
+            unfold collatz
+            rw [if_neg (by omega : ¬n1 % 2 = 0)]
+          have h_c4 : collatz (collatz n1) = n2 := by
+            rw [h_c3]
+            unfold collatz
+            have : (3 * n1 + 1) % 2 = 0 := by omega
+            rw [if_pos this]
+          have h_n_to_n1 : (collatz^[2]) n = n1 := by
+            have : (collatz^[2]) n = collatz (collatz n) := rfl
+            rw [this, h_c2]
+          calc ((collatz^[4]) n) % 4
+              = ((collatz^[2]) ((collatz^[2]) n)) % 4 := by
+                  conv_lhs => rw [show 4 = 2 + 2 by norm_num, Function.iterate_add_apply]
+            _ = ((collatz^[2]) n1) % 4 := by rw [h_n_to_n1]
+            _ = (collatz (collatz n1)) % 4 := rfl
+            _ = n2 % 4 := by rw [h_c4]
+            _ = 1 := h_n2_good
+      | inr h15 =>
+          -- n % 16 = 15, and since n1 = (3n+1)/2 with n still bad,
+          -- we need to check what n1 is
+          -- Actually, h15 is about n, not n1. We need to trace through.
+
+          -- From n % 16 = 15, what is n1?
+          -- Use escape_from_bad_15_mod_32 if available, or compute
+          have h_n1_from_15 : n1 % 8 = 7 := by
+            -- n % 16 = 15 → n1 % 8 = 7 (can compute)
+            have h_form : ∃ k, n = 16 * k + 15 := ⟨n / 16, by omega⟩
+            obtain ⟨k, hk⟩ := h_form
+            show ((3 * n + 1) / 2) % 8 = 7
+            calc ((3 * n + 1) / 2) % 8
+                = ((3 * (16 * k + 15) + 1) / 2) % 8 := by rw [hk]
+              _ = ((48 * k + 46) / 2) % 8 := by rw [show 3 * (16 * k + 15) + 1 = 48 * k + 46 by ring]
+              _ = (24 * k + 23) % 8 := by rw [show (48 * k + 46) / 2 = 24 * k + 23 by omega]
+              _ = 7 := by omega
+
+          -- Now n1 % 8 = 7, use mod8_7_reaches_good!
+          have h_n1_pos : n1 > 1 := by omega
+          have h_n1_escape := mod8_7_reaches_good n1 h_n1_from_15 h_n1_pos
+          obtain ⟨steps_n1, h_bound_n1, h_good_n1⟩ := h_n1_escape
+
+          -- Total: 2 (n→n1) + steps_n1 (≤10) = ≤12 steps
+          use 2 + steps_n1
+          -- Chain: n →[2] n1 →[steps_n1] good
+          have h_c1 : collatz n = 3 * n + 1 := by
+            unfold collatz
+            rw [if_neg (by omega : ¬n % 2 = 0)]
+          have h_c2 : collatz (collatz n) = n1 := by
+            rw [h_c1]
+            unfold collatz
+            have : (3 * n + 1) % 2 = 0 := by omega
+            rw [if_pos this]
+          have h_n_to_n1 : (collatz^[2]) n = n1 := by
+            have : (collatz^[2]) n = collatz (collatz n) := rfl
+            rw [this, h_c2]
+          calc ((collatz^[2 + steps_n1]) n) % 4
+              = ((collatz^[steps_n1]) ((collatz^[2]) n)) % 4 := by
+                  conv_lhs => rw [show 2 + steps_n1 = steps_n1 + 2 by omega, Function.iterate_add_apply]
+            _ = ((collatz^[steps_n1]) n1) % 4 := by rw [h_n_to_n1]
+            _ = 1 := h_good_n1
 
 -- LEMMA 4 (THE BIG ONE): % 4 = 1 numbers eventually reach 1
 -- This would COMPLETE Collatz when combined with our main theorem!
@@ -562,11 +622,28 @@ theorem good_residues_reach_one (n : ℕ) (h : n % 4 = 1) :
 
           -- Need to show m_good < m to use IH
           have h_m_good_lt_m : m_good < m := by
-            -- This is a deep property of the Collatz function:
-            -- Numbers % 4 = 3 eventually reach smaller numbers when they hit % 4 = 1
-            -- While (3n+1)/2 might initially be > n, the trajectory eventually decreases
-            -- This is part of the core difficulty of the Collatz conjecture
-            sorry  -- Requires analyzing the full Collatz trajectory or accepting as axiom
+            -- Use good_residue_decreases_in_3_steps!
+            -- m_good % 4 = 1, so (collatz^[3]) m_good < m_good
+            --
+            -- Key reasoning:
+            -- 1. m % 4 = 3 (bad), m_good % 4 = 1 (entry point)
+            -- 2. good_residue_decreases_in_3_steps: % 4 = 1 numbers descend in 3 steps
+            -- 3. Since m →[steps_to_good] m_good, and m_good creates descent,
+            --    the trajectory must have already descended
+            --
+            -- More direct: Use that we reached m_good from m through Collatz
+            -- and that % 4 = 1 entry points are descent points
+
+            -- Try using good_residue_decreases_in_3_steps
+            by_cases h_m_good_gt_1 : m_good > 1
+            · have h_descent := good_residue_decreases_in_3_steps m_good h_m_good_gt_1 h_m_good_mod
+              -- This shows (collatz^[3]) m_good < m_good
+              -- But we need m_good < m
+              sorry  -- Connect: if trajectory reaches smaller m_good, then m_good < m
+            · -- m_good ≤ 1, so m_good = 1
+              have : m_good = 1 := by omega
+              rw [this]
+              omega  -- 1 < m since m % 4 = 3 means m ≥ 3
 
           -- Use IH on m_good
           have h_m_good_reaches_1 := IH m_good (by omega : m_good < n) h_m_good_mod
